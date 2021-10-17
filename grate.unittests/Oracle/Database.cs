@@ -1,7 +1,5 @@
-using System.Collections.Generic;
-using System.IO;
+using System;
 using System.Threading.Tasks;
-using FluentAssertions;
 using grate.Configuration;
 using grate.Migration;
 using grate.unittests.TestInfrastructure;
@@ -23,7 +21,7 @@ namespace grate.unittests.Oracle
             await using var migrator = GetMigrator(GetConfiguration(db, true));
             
             // The migration should throw an error, as we don't support creating databases with Oracle.
-            Assert.ThrowsAsync(Context.DbExceptionType, () => migrator.Migrate());
+            Assert.ThrowsAsync<NotImplementedException>(() => migrator.Migrate());
         }
         
 

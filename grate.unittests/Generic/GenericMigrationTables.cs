@@ -28,7 +28,7 @@ namespace grate.unittests.Generic
             
             var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
 
-            await using (var migrator = GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
@@ -55,7 +55,7 @@ namespace grate.unittests.Generic
             var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             CreateInvalidSql(knownFolders.Up);
 
-            await using (var migrator = GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 try
                 {
@@ -85,13 +85,13 @@ namespace grate.unittests.Generic
 
             var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             
-            await using (var migrator = GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
             
             // Run migration again - make sure it does not throw an exception
-            await using (var migrator = GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 Assert.DoesNotThrowAsync(() => migrator.Migrate());
             }
@@ -104,7 +104,7 @@ namespace grate.unittests.Generic
 
             var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             
-            await using (var migrator = GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
@@ -121,24 +121,6 @@ namespace grate.unittests.Generic
             var versions = entries.ToList();
             versions.Should().HaveCount(1);
             versions.FirstOrDefault().Should().Be("a.b.c.d");
-        }
-
-        private GrateMigrator GetMigrator(string databaseName, bool createDatabase, KnownFolders knownFolders)
-        {
-            var config = new GrateConfiguration()
-            {
-                CreateDatabase = createDatabase, 
-                ConnectionString = Context.ConnectionString(databaseName),
-                AdminConnectionString = Context.AdminConnectionString,
-                Version = "a.b.c.d",
-                KnownFolders = knownFolders,
-                AlterDatabase = true,
-                NonInteractive = true,
-                DatabaseType = Context.DatabaseType 
-            };
-
-            return Context.GetMigrator(config);
-
         }
 
         private static void CreateInvalidSql(MigrationsFolder? folder)

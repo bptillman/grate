@@ -1,4 +1,6 @@
-﻿namespace grate.Infrastructure
+﻿using System;
+
+namespace grate.Infrastructure
 {
     public class OracleSyntax : ISyntax
     {
@@ -16,19 +18,20 @@
 
         public string CurrentDatabase => "select name from v$database";
         public string ListDatabases => "SELECT datname FROM pg_database";
-        public string VarcharType => "varchar";
-        public string TextType => "text";
-        public string BooleanType => "boolean";
-        public string PrimaryKeyColumn(string columnName) => $"{columnName} bigint GENERATED ALWAYS AS IDENTITY NOT NULL";
-        public string CreateSchema(string schemaName) => @$"CREATE SCHEMA ""{schemaName}"";";
-        public string CreateDatabase(string databaseName) => @$"CREATE DATABASE ""{databaseName}""";
-        public string DropDatabase(string databaseName) => @$"select pg_terminate_backend(pid) from pg_stat_activity where datname='{databaseName}';
-                                                              DROP DATABASE IF EXISTS ""{databaseName}"";";
-        public string TableWithSchema(string schemaName, string tableName) => $"{schemaName}.\"{tableName}\"";
+        public string VarcharType => "VARCHAR2";
+        public string TextType => "TEXT";
+        public string BooleanType => "CHAR(1)";
+        public string PrimaryKeyColumn(string columnName) => $"{columnName} NUMBER PRIMARY KEY";
+
+        public string CreateSchema(string schemaName) => throw new NotImplementedException("Create schema is not implemented for Oracle DB");
+        public string CreateDatabase(string databaseName) => throw new NotImplementedException("Create database is not implemented for Oracle DB");
+        public string DropDatabase(string databaseName) => throw new NotImplementedException("Drop database is not implemented for Oracle DB");
+        
+        public string TableWithSchema(string schemaName, string tableName) => $"{schemaName}_{tableName}";
         public string ReturnId => "RETURNING id;";
         public string TimestampType => "timestamp";
         public string Quote(string text) => $"\"{text}\"";
-        public string PrimaryKeyConstraint(string tableName, string column) => $",\nCONSTRAINT PK_{tableName}_{column} PRIMARY KEY ({column})";
+        public string PrimaryKeyConstraint(string tableName, string column) => "";
         public string LimitN(string sql, int n) => sql + $"\nLIMIT {n}";
     }
 }

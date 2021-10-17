@@ -74,9 +74,7 @@ namespace grate.Migration
             if (!await DatabaseExists())
             {
                 using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-                var cmd = AdminConnection.CreateCommand();
-                cmd.CommandText = _syntax.CreateDatabase(DatabaseName);
-                await cmd.ExecuteNonQueryAsync();
+                await ExecuteNonQuery(AdminConnection, _syntax.CreateDatabase(DatabaseName));
                 s.Complete();
             }
 
@@ -89,9 +87,7 @@ namespace grate.Migration
             using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
             await CloseConnection(); // try and ensure there's nobody else in there...
             await OpenAdminConnection();
-            var cmd = AdminConnection.CreateCommand();
-            cmd.CommandText = _syntax.DropDatabase(DatabaseName);
-            await cmd.ExecuteNonQueryAsync();
+            await ExecuteNonQuery(AdminConnection, _syntax.DropDatabase(DatabaseName));
             s.Complete();
         }
 
@@ -157,16 +153,9 @@ namespace grate.Migration
 
         private async Task CreateRunSchema()
         {
-            if (SupportsSchemas)
+            if (SupportsSchemas && !await RunSchemaExists())
             {
-                string createSql = _syntax.CreateSchema(SchemaName);
-
-                if (!await RunSchemaExists())
-                {
-                    await using var cmd = Connection.CreateCommand();
-                    cmd.CommandText = createSql;
-                    await cmd.ExecuteNonQueryAsync();
-                }
+                await ExecuteNonQuery(Connection, _syntax.CreateSchema(SchemaName));
             }
         }
 
@@ -181,7 +170,7 @@ namespace grate.Migration
 
         // TODO: Change MySQL/MariaDB from using schemas to using grate_ prefix
 
-        private async Task CreateScriptsRunTable()
+        protected virtual async Task CreateScriptsRunTable()
         {
             string createSql = $@"
 CREATE TABLE {ScriptsRunTable}(
@@ -199,13 +188,11 @@ CREATE TABLE {ScriptsRunTable}(
             
             if (!await ScriptsRunTableExists())
             {
-                await using var cmd = Connection.CreateCommand();
-                cmd.CommandText = createSql;
-                var res = await cmd.ExecuteNonQueryAsync();
+                await ExecuteNonQuery(Connection, createSql);
             }
         }
 
-        private async Task CreateScriptsRunErrorsTable()
+        protected virtual async Task CreateScriptsRunErrorsTable()
         {
             string createSql = $@"
 CREATE TABLE {ScriptsRunErrorsTable}(
@@ -223,13 +210,11 @@ CREATE TABLE {ScriptsRunErrorsTable}(
 );";
             if (!await ScriptsRunErrorsTableExists())
             {
-                await using var cmd = Connection.CreateCommand();
-                cmd.CommandText = createSql;
-                await cmd.ExecuteNonQueryAsync();
+                await ExecuteNonQuery(Connection, createSql);
             }
         }
 
-        private async Task CreateVersionTable()
+        protected virtual async Task CreateVersionTable()
         {
             string createSql = $@"
 CREATE TABLE {VersionTable}(
@@ -243,9 +228,7 @@ CREATE TABLE {VersionTable}(
 );";
             if (!await VersionTableExists())
             {
-                await using var cmd = Connection.CreateCommand();
-                cmd.CommandText = createSql;
-                await cmd.ExecuteNonQueryAsync();
+                await ExecuteNonQuery(Connection, createSql);
             }
         }
 
@@ -333,10 +316,7 @@ VALUES(@newVersion, @entryDate, @modifiedDate, @enteredBy)
                 _ => throw new ArgumentOutOfRangeException(nameof(connectionType), connectionType, "Unknown connection type: " + connectionType)
             };
 
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.CommandType = CommandType.Text;
-            await cmd.ExecuteNonQueryAsync();
+            await ExecuteNonQuery(conn, sql);
         }
 
         // ReSharper disable once ClassNeverInstantiated.Local
@@ -462,6 +442,14 @@ VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName,
                 await conn.OpenAsync();
                 await conn.QueryAsync<string>(_syntax.CurrentDatabase);
             }
+        }
+
+        protected static async Task ExecuteNonQuery(DbConnection conn, string sql)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.CommandType = CommandType.Text;
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async ValueTask DisposeAsync()
