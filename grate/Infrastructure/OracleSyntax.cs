@@ -14,7 +14,7 @@
             }
         }
 
-        public string CurrentDatabase => "SELECT current_database()";
+        public string CurrentDatabase => "select name from v$database";
         public string ListDatabases => "SELECT datname FROM pg_database";
         public string VarcharType => "varchar";
         public string TextType => "text";

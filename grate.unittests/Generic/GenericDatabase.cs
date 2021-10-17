@@ -142,7 +142,7 @@ namespace grate.unittests.Generic
                 CreateDatabase = createDatabase, 
                 ConnectionString = Context.ConnectionString(databaseName),
                 AdminConnectionString = adminConnectionString ?? Context.AdminConnectionString,
-                KnownFolders = KnownFolders.In(new DirectoryInfo(@"C:\tmp\sql")),
+                KnownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory()),
                 NonInteractive = true,
                 DatabaseType = Context.DatabaseType
             };

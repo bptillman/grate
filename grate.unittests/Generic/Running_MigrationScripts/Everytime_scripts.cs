@@ -23,7 +23,7 @@ namespace grate.unittests.Generic.Running_MigrationScripts
 
             for (var i = 0; i < 3; i++)
             {
-                await using var migrator = Context.GetMigrator(db, true, knownFolders);
+                await using var migrator = Context.GetMigrator(db, knownFolders);
                 await migrator.Migrate();
             }
 
@@ -77,7 +77,7 @@ namespace grate.unittests.Generic.Running_MigrationScripts
 
             for (var i = 0; i < 3; i++)
             {
-                await using (migrator = Context.GetMigrator(db, true, knownFolders))
+                await using (migrator = Context.GetMigrator(db, knownFolders))
                 {
                     await migrator.Migrate();
                 }

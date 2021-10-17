@@ -38,5 +38,6 @@ namespace grate.unittests.TestInfrastructure
 
 
         public string ExpectedVersionPrefix => "3.32.3";
+        public bool SupportsCreateDatabase => false;
     }
 }

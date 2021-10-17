@@ -23,11 +23,11 @@ namespace grate.unittests.Generic.Running_MigrationScripts
             var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
             CreateDummySql(knownFolders.Sprocs);
 
-            await using (migrator = Context.GetMigrator(db, true, knownFolders))
+            await using (migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
-            await using (migrator = Context.GetMigrator(db, true, knownFolders))
+            await using (migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
@@ -53,14 +53,14 @@ namespace grate.unittests.Generic.Running_MigrationScripts
             var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
             CreateDummySql(knownFolders.Sprocs);
 
-            await using (migrator = Context.GetMigrator(db, true, knownFolders))
+            await using (migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }
 
             WriteSomeOtherSql(knownFolders.Sprocs);
 
-            await using (migrator = Context.GetMigrator(db, true, knownFolders))
+            await using (migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }

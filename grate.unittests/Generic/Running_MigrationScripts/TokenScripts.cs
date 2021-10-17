@@ -20,7 +20,7 @@ namespace grate.unittests.Generic.Running_MigrationScripts
             var path = knownFolders?.Views?.Path ?? throw new Exception("Config Fail");
             WriteSql(path, "token.sql", "create view grate as select '{{DatabaseName}}' as dbase;");
 
-            await using (var migrator = Context.GetMigrator(db, true, knownFolders))
+            await using (var migrator = Context.GetMigrator(db, knownFolders))
             {
                 await migrator.Migrate();
             }

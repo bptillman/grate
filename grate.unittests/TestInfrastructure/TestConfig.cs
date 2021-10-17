@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Extensions.Logging;
 
 namespace grate.unittests.TestInfrastructure
@@ -14,6 +15,15 @@ namespace grate.unittests.TestInfrastructure
             builder.AddProvider(new NUnitLoggerProvider())
                 .SetMinimumLevel(GetLogLevel());
         });
+        
+        public static DirectoryInfo CreateRandomTempDirectory()
+        {
+            var dummyFile = Path.GetTempFileName();
+            File.Delete(dummyFile);
+
+            var scriptsDir = Directory.CreateDirectory(dummyFile);
+            return scriptsDir;
+        }
     
         private static LogLevel GetLogLevel()
         {
@@ -23,5 +33,6 @@ namespace grate.unittests.TestInfrastructure
             }
             return logLevel;
         }
+        
     }
 }

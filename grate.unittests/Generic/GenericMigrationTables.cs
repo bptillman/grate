@@ -26,7 +26,7 @@ namespace grate.unittests.Generic
             var db = "MonoBonoJono";
             var fullTableName = Context.Syntax.TableWithSchema("grate", tableName);
             
-            var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
+            var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
 
             await using (var migrator = GetMigrator(db, true, knownFolders))
             {
@@ -52,7 +52,7 @@ namespace grate.unittests.Generic
             var db = "DatabaseWithFailingScripts";
             var fullTableName = Context.Syntax.TableWithSchema("grate", tableName);
             
-            var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
+            var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             CreateInvalidSql(knownFolders.Up);
 
             await using (var migrator = GetMigrator(db, true, knownFolders))
@@ -83,7 +83,7 @@ namespace grate.unittests.Generic
         {
             var db = "MonoBonoJono";
 
-            var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
+            var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             
             await using (var migrator = GetMigrator(db, true, knownFolders))
             {
@@ -102,7 +102,7 @@ namespace grate.unittests.Generic
         {
             var db = "BooYaTribe";
 
-            var knownFolders = KnownFolders.In(CreateRandomTempDirectory());
+            var knownFolders = KnownFolders.In(TestConfig.CreateRandomTempDirectory());
             
             await using (var migrator = GetMigrator(db, true, knownFolders))
             {
@@ -141,15 +141,6 @@ namespace grate.unittests.Generic
 
         }
 
-        private static DirectoryInfo CreateRandomTempDirectory()
-        {
-            var dummyFile = Path.GetTempFileName();
-            File.Delete(dummyFile);
-
-            var scriptsDir = Directory.CreateDirectory(dummyFile);
-            return scriptsDir;
-        }
-        
         private static void CreateInvalidSql(MigrationsFolder? folder)
         {
             var dummySql = "SELECT TOP";

@@ -42,5 +42,6 @@ namespace grate.unittests.TestInfrastructure
 
 
         public string ExpectedVersionPrefix => "10.5.9-MariaDB";
+        public bool SupportsCreateDatabase => true;
     }
 }

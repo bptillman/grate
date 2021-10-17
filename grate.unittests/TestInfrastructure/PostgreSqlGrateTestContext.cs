@@ -41,5 +41,6 @@ namespace grate.unittests.TestInfrastructure
 
 
         public string ExpectedVersionPrefix => "PostgreSQL 14.";
+        public bool SupportsCreateDatabase => true;
     }
 }

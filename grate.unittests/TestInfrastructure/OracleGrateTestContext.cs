@@ -4,8 +4,6 @@ using grate.Configuration;
 using grate.Infrastructure;
 using grate.Migration;
 using Microsoft.Extensions.Logging;
-using Npgsql;
-using NSubstitute;
 using Oracle.ManagedDataAccess.Client;
 
 namespace grate.unittests.TestInfrastructure
@@ -17,32 +15,10 @@ namespace grate.unittests.TestInfrastructure
 
         public string DockerCommand(string serverName, string adminPassword) =>
             $"run -d --name {serverName} -e ORACLE_ENABLE_XDB=true -P oracleinanutshell/oracle-xe-11g:latest";
-            //$"run -d --name {serverName} -e ORACLE_ENABLE_XDB=true {adminPassword} -P oracleinanutshell/oracle-xe-11g:latest";
-        //$"run -d -P -e ORACLE_ENABLE_XDB=true"
 
-        public string ConnString1 =
-            "SERVER=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=MyHost)(PORT=MyPort))(CONNECT_DATA=(SERVICE_NAME=MyOracleSID)));uid=myUsername;pwd=myPassword;";
-
-        public string ConnString2 =
-            "Data Source=localhost:1521/XE;Persist Security Info=True;User ID=scott;Password=tiger";
-
-        
-//         public string ConnectionString(string database) => $@"
-// SERVER=
-//     (DESCRIPTION=
-//         (ADDRESS=(PROTOCOL=TCP)
-//         (HOST=127.0.0.1)
-//         (PORT={Port}))
-//     (CONNECT_DATA=
-//         (SERVICE_NAME={database})));
-// uid=system;pwd=oracle;
-// ";
-
-        //public string AdminConnectionString => $"user id=system;password={AdminPassword};data source=localhost:{Port}/XE";
-        public string AdminConnectionString =>
-            $@"Data Source=localhost:{Port}/XE;Persist Security Info=True;User ID=system;Password=oracle";
-        public string ConnectionString(string database) => $"user id=system;password=oracle;data source=localhost:{Port}/{database}";
-        //public string ConnectionString(string database) => $"user id=system;password={AdminPassword};data source=localhost:{Port}/{database}";
+        public string AdminConnectionString => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle";
+        public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle";
+        //public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle;Proxy User Id={database}";
 
         public DbConnection GetDbConnection(string connectionString) => new OracleConnection(connectionString);
 
@@ -59,11 +35,11 @@ namespace grate.unittests.TestInfrastructure
         public SqlStatements Sql => new()
         {
             SelectAllDatabases = "SELECT datname FROM pg_database",
-            SelectVersion = "SELECT version()",
-            SelectCurrentDatabase = "SELECT current_database()"
+            SelectVersion = "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'",
+            SelectCurrentDatabase = "select name from V$database;"
         };
 
-
-        public string ExpectedVersionPrefix => "PostgreSQL 14.";
+        public string ExpectedVersionPrefix => "Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production";
+        public bool SupportsCreateDatabase => false;
     }
 }

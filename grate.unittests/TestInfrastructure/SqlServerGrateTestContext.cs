@@ -40,7 +40,7 @@ namespace grate.unittests.TestInfrastructure
             SelectCurrentDatabase = "SELECT DB_NAME()"
         };
 
-
         public string ExpectedVersionPrefix => "Microsoft SQL Server 2017";
+        public bool SupportsCreateDatabase => false;
     }
 }
