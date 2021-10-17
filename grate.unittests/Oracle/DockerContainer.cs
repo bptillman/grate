@@ -14,17 +14,19 @@ namespace grate.unittests.Oracle
         public async Task IsUpAndRunning()
         {
             var db = "master";
-            var pw = GrateTestContext.SqlServer.AdminPassword;
-            var port = GrateTestContext.SqlServer.Port;
+            var pw = GrateTestContext.Oracle.AdminPassword;
+            var port = GrateTestContext.Oracle.Port;
 
             //var connectionString = $"Data Source=localhost:{port};Initial Catalog={db};User Id=sa;Password={pw};DBA Privilege=SYSDBA";
             //var connectionString = $"user id=scott;password=tiger;data source=//localhost:{port}/sales.us.acme.com";
-
-            var connectionString = $"user id=sa;password={pw};data source=" +
-                                   $"(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)" +
-                                   $"(HOST=localhost)(PORT={port}))(CONNECT_DATA=" +
-                                   $"(SERVICE_NAME={db})))";
-
+            
+            var connectionString = $"user id=system;password={pw};data source=localhost:{port}/XE";
+            //
+            // var connectionString = $"user id=sa;password={pw};data source=" +
+            //                        $"(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)" +
+            //                        $"(HOST=localhost)(PORT={port}))(CONNECT_DATA=" +
+            //                        $"(SERVICE_NAME={db})))";
+            
             var sql = "SELECT @@VERSION";
 
             string? res;

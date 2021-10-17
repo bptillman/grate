@@ -20,6 +20,20 @@ namespace grate.unittests.Oracle
     {
         private static string? AdminConnectionString() => $"Data Source=localhost,{GrateTestContext.Oracle.Port};Initial Catalog=master;User Id=sa;Password={GrateTestContext.Oracle.AdminPassword}";
         private static string? ConnectionString(string database) => $"Data Source=localhost,{GrateTestContext.Oracle.Port};Initial Catalog={database};User Id=sa;Password={GrateTestContext.Oracle.AdminPassword}";
+        
+        "docker run -d -p 49161:1521 -e ORACLE_ENABLE_XDB=true"
+        
+        /*
+         
+        "docker run -d -p 49161:1521 -e ORACLE_ENABLE_XDB=true"
+        "docker run -d -P -e ORACLE_ENABLE_XDB=true"
+         
+         * hostname: localhost
+port: 49161
+sid: xe
+username: system
+password: oracle
+         */
 
         [Test]
         public async Task Is_created_if_confed_and_it_does_not_exist()
