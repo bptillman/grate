@@ -265,7 +265,7 @@ CREATE TABLE {VersionTable}(
             var res = await cmd.ExecuteScalarAsync();
             return !DBNull.Value.Equals(res) && res is not null;
         }
-
+        
         protected virtual string ExistsSql(string tableSchema, string fullTableName)
         {
             return $@"

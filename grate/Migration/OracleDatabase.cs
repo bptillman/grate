@@ -13,8 +13,17 @@ namespace grate.Migration
         }
 
         public override bool SupportsDdlTransactions => true;
-        public override bool SupportsSchemas => true;
+        public override bool SupportsSchemas => false;
 
         protected override DbConnection GetSqlConnection(string? connectionString) => new OracleConnection(connectionString);
+
+        protected override string ExistsSql(string tableSchema, string fullTableName)
+        {
+            return $@"
+SELECT * FROM all_tables
+WHERE 
+table_name = '{fullTableName}'
+";
+        }
     }
 }
