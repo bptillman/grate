@@ -6,6 +6,7 @@ using grate.Migration;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using NSubstitute;
+using Oracle.ManagedDataAccess.Client;
 
 namespace grate.unittests.TestInfrastructure
 {
@@ -19,20 +20,41 @@ namespace grate.unittests.TestInfrastructure
             //$"run -d --name {serverName} -e ORACLE_ENABLE_XDB=true {adminPassword} -P oracleinanutshell/oracle-xe-11g:latest";
         //$"run -d -P -e ORACLE_ENABLE_XDB=true"
 
-        public string AdminConnectionString => $"user id=system;password={AdminPassword};data source=localhost:{Port}/XE";
-        public string ConnectionString(string database) => $"user id=system;password={AdminPassword};data source=localhost:{Port}/{database}";
+        public string ConnString1 =
+            "SERVER=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=MyHost)(PORT=MyPort))(CONNECT_DATA=(SERVICE_NAME=MyOracleSID)));uid=myUsername;pwd=myPassword;";
 
-        public DbConnection GetDbConnection(string connectionString) => new NpgsqlConnection(connectionString);
+        public string ConnString2 =
+            "Data Source=localhost:1521/XE;Persist Security Info=True;User ID=scott;Password=tiger";
 
-        public ISyntax Syntax => new PostgreSqlSyntax();
-        public Type DbExceptionType => typeof(PostgresException);
+        
+//         public string ConnectionString(string database) => $@"
+// SERVER=
+//     (DESCRIPTION=
+//         (ADDRESS=(PROTOCOL=TCP)
+//         (HOST=127.0.0.1)
+//         (PORT={Port}))
+//     (CONNECT_DATA=
+//         (SERVICE_NAME={database})));
+// uid=system;pwd=oracle;
+// ";
 
-        public DatabaseType DatabaseType => DatabaseType.postgresql;
+        //public string AdminConnectionString => $"user id=system;password={AdminPassword};data source=localhost:{Port}/XE";
+        public string AdminConnectionString =>
+            $@"Data Source=localhost:{Port}/XE;Persist Security Info=True;User ID=system;Password=oracle";
+        public string ConnectionString(string database) => $"user id=system;password=oracle;data source=localhost:{Port}/{database}";
+        //public string ConnectionString(string database) => $"user id=system;password={AdminPassword};data source=localhost:{Port}/{database}";
+
+        public DbConnection GetDbConnection(string connectionString) => new OracleConnection(connectionString);
+
+        public ISyntax Syntax => new OracleSyntax();
+        public Type DbExceptionType => typeof(OracleException);
+
+        public DatabaseType DatabaseType => DatabaseType.oracle;
         public bool SupportsTransaction => true;
-        public string DatabaseTypeName => "PostgreSQL";
-        public string MasterDatabase => "postgres";
+        public string DatabaseTypeName => "Oracle";
+        public string MasterDatabase => "oracle";
 
-        public IDatabase DatabaseMigrator => new PostgreSqlDatabase(TestConfig.LogFactory.CreateLogger<PostgreSqlDatabase>());
+        public IDatabase DatabaseMigrator => new OracleDatabase(TestConfig.LogFactory.CreateLogger<OracleDatabase>());
 
         public SqlStatements Sql => new()
         {
