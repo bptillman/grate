@@ -36,7 +36,7 @@ namespace grate.unittests.TestInfrastructure
         
         public GrateConfiguration DefaultConfiguration => new()
         {
-            CreateDatabase = true,
+            CreateDatabase = SupportsCreateDatabase,
             AdminConnectionString = AdminConnectionString,
             Version = "a.b.c.d",
             AlterDatabase = true,
@@ -74,7 +74,6 @@ namespace grate.unittests.TestInfrastructure
         {
             var config = DefaultConfiguration with
             {
-                CreateDatabase = SupportsCreateDatabase,
                 ConnectionString = ConnectionString(databaseName),
                 KnownFolders = knownFolders,
                 Environment = env != null ? new GrateEnvironment(env) : null,

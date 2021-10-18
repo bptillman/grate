@@ -19,9 +19,10 @@ namespace grate.Infrastructure
         public string CurrentDatabase => "select name from v$database";
         public string ListDatabases => "SELECT datname FROM pg_database";
         public string VarcharType => "VARCHAR2";
-        public string TextType => "TEXT";
+        public string TextType => "CLOB";
+        public string BigintType => "NUMBER(19)";
         public string BooleanType => "CHAR(1)";
-        public string PrimaryKeyColumn(string columnName) => $"{columnName} NUMBER PRIMARY KEY";
+        public string PrimaryKeyColumn(string columnName) => $"{columnName} NUMBER(19) PRIMARY KEY";
 
         public string CreateSchema(string schemaName) => throw new NotImplementedException("Create schema is not implemented for Oracle DB");
         public string CreateDatabase(string databaseName) => throw new NotImplementedException("Create database is not implemented for Oracle DB");

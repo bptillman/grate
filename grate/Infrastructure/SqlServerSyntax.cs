@@ -18,6 +18,7 @@
         public string ListDatabases => "SELECT name FROM sys.databases";
         public string VarcharType => "nvarchar";
         public string TextType => "ntext";
+        public string BigintType => "BIGINT";
         public string BooleanType => "bit";
         public string PrimaryKeyColumn(string columnName) => $"{columnName} bigint IDENTITY(1,1) NOT NULL";
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA ""{schemaName}"";";

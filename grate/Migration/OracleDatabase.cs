@@ -1,5 +1,9 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data;
+using System.Data.Common;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Dapper;
 using grate.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
@@ -18,54 +22,99 @@ namespace grate.Migration
 
         protected override DbConnection GetSqlConnection(string? connectionString) => new OracleConnection(connectionString);
 
-        protected override string ExistsSql(string tableSchema, string fullTableName)
-        {
-            return $@"
-SELECT * FROM all_tables
+        protected override string ExistsSql(string tableSchema, string fullTableName) =>
+            $@"
+SELECT * FROM user_tables
 WHERE 
-table_name = '{fullTableName}'
+lower(table_name) = '{fullTableName.ToLowerInvariant()}'
 ";
-        }
 
+        protected override string CurrentVersionSql => $@"
+SELECT version
+FROM 
+    (SELECT version,
+            ROW_NUMBER() OVER (ORDER BY version DESC) AS version_row_number 
+    FROM {VersionTable})
+WHERE  version_row_number <= 1
+"; 
+        
         protected override async Task CreateScriptsRunTable()
         {
-            await base.CreateScriptsRunTable();
-            await CreateIdSequence(ScriptsRunTable);
-            await CreateIdInsertTrigger(ScriptsRunTable);
+            if (!await ScriptsRunTableExists())
+            {
+                await base.CreateScriptsRunTable();
+                await CreateIdSequence(ScriptsRunTable);
+                await CreateIdInsertTrigger(ScriptsRunTable);
+            }
         }
         
         protected override async Task CreateScriptsRunErrorsTable()
         {
-            await base.CreateScriptsRunErrorsTable();
-            await CreateIdSequence(ScriptsRunErrorsTable);
-            await CreateIdInsertTrigger(ScriptsRunErrorsTable);
+            if (!await ScriptsRunErrorsTableExists())
+            {
+                await base.CreateScriptsRunErrorsTable();
+                await CreateIdSequence(ScriptsRunErrorsTable);
+                await CreateIdInsertTrigger(ScriptsRunErrorsTable);
+            }
         }
         
         protected override async Task CreateVersionTable()
         {
-            await base.CreateVersionTable();
-            await CreateIdSequence(VersionTable);
-            await CreateIdInsertTrigger(VersionTable);
+            if (!await VersionTableExists())
+            {
+                await base.CreateVersionTable();
+                await CreateIdSequence(VersionTable);
+                await CreateIdInsertTrigger(VersionTable);
+            }
         }
         
+        protected override string Parameterize(string sql) => sql.Replace("@", ":");
+        protected override object Bool(bool source) => source ? '1': '0';
+
+        public override async Task<long> VersionTheDatabase(string newVersion)
+        {
+            var sql = (string)$@"
+INSERT INTO {VersionTable}
+(version, entry_date, modified_date, entered_by)
+VALUES(:newVersion, :entryDate, :modifiedDate, :enteredBy)
+RETURNING id into :id
+";
+            var parameters = new
+            {
+                newVersion,
+                entryDate = DateTime.UtcNow,
+                modifiedDate = DateTime.UtcNow,
+                enteredBy = ClaimsPrincipal.Current?.Identity?.Name ?? Environment.UserName,
+            };
+            var dynParams = new DynamicParameters(parameters);
+            dynParams.Add(":id", dbType: DbType.Int64, direction: ParameterDirection.Output);
+            
+            await Connection.ExecuteAsync(
+                sql,
+                dynParams);
+
+            var res = dynParams.Get<long>(":id");
+
+            Logger.LogInformation(" Versioning {dbName} database with version {version}.", DatabaseName, newVersion);
+
+            return res;
+        }
+
         private async Task CreateIdSequence(string table)
         {
-            var sql = $"CREATE SEQUENCE {table}_sequence;";
+            var sql = $"CREATE SEQUENCE {table}_seq";
             await ExecuteNonQuery(Connection, sql);
         }
 
         private async Task CreateIdInsertTrigger(string table)
         {
             var sql = $@"
-CREATE OR REPLACE TRIGGER {table}_on_insert
-  BEFORE INSERT ON {table}
-  FOR EACH ROW
+CREATE OR REPLACE TRIGGER {table}_ins
+BEFORE INSERT ON {table}
+FOR EACH ROW
 BEGIN
-  SELECT {table}_sequence.nextval
-  INTO :new.id
-  FROM dual;
-END;
-";
+  SELECT {table}_seq.nextval INTO :new.id FROM dual;
+END;";
             await ExecuteNonQuery(Connection, sql);
         }
     }

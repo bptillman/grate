@@ -18,6 +18,7 @@
         public string ListDatabases => "select name from pragma_database_list";
         public string VarcharType => "nvarchar";
         public string TextType => "ntext";
+        public string BigintType => "BIGINT";
         public string BooleanType => "bit";
         public string PrimaryKeyColumn(string columnName) => $"{columnName} INTEGER PRIMARY KEY NOT NULL";
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA ""{schemaName}"";";

@@ -162,10 +162,8 @@ namespace grate.Migration
         private async Task<bool> RunSchemaExists()
         {
             string sql = $"SELECT s.schema_name FROM information_schema.schemata s WHERE s.schema_name = '{SchemaName}'";
-            await using var cmd = Connection.CreateCommand();
-            cmd.CommandText = sql;
-            var res = await cmd.ExecuteScalarAsync();
-            return res?.ToString() == SchemaName;
+            var res = await ExecuteScalarAsync<string>(Connection, sql, null);
+            return res == SchemaName;
         }
 
         // TODO: Change MySQL/MariaDB from using schemas to using grate_ prefix
@@ -175,7 +173,7 @@ namespace grate.Migration
             string createSql = $@"
 CREATE TABLE {ScriptsRunTable}(
 	{_syntax.PrimaryKeyColumn("id")},
-	version_id bigint NULL,
+	version_id {_syntax.BigintType} NULL,
 	script_name {_syntax.VarcharType}(255) NULL,
 	text_of_script {_syntax.TextType} NULL,
 	text_hash {_syntax.VarcharType}(512) NULL,
@@ -184,7 +182,7 @@ CREATE TABLE {ScriptsRunTable}(
 	modified_date {_syntax.TimestampType} NULL,
 	entered_by {_syntax.VarcharType}(50) NULL
 	{_syntax.PrimaryKeyConstraint("ScriptsRun","id")}
-);";
+)";
             
             if (!await ScriptsRunTableExists())
             {
@@ -207,7 +205,7 @@ CREATE TABLE {ScriptsRunErrorsTable}(
 	modified_date {_syntax.TimestampType} NULL,
 	entered_by {_syntax.VarcharType}(50) NULL
 	{_syntax.PrimaryKeyConstraint("ScriptsRunErrors","id")}
-);";
+)";
             if (!await ScriptsRunErrorsTableExists())
             {
                 await ExecuteNonQuery(Connection, createSql);
@@ -225,16 +223,16 @@ CREATE TABLE {VersionTable}(
 	modified_date {_syntax.TimestampType} NULL,
 	entered_by {_syntax.VarcharType}(50) NULL
 	{_syntax.PrimaryKeyConstraint("Version","id")}
-);";
+)";
             if (!await VersionTableExists())
             {
                 await ExecuteNonQuery(Connection, createSql);
             }
         }
 
-        private async Task<bool> ScriptsRunTableExists() => await TableExists(SchemaName, "ScriptsRun");
-        private async Task<bool> ScriptsRunErrorsTableExists() => await TableExists(SchemaName, "ScriptsRunErrors");
-        private async Task<bool> VersionTableExists() => await TableExists(SchemaName, "Version");
+        protected async Task<bool> ScriptsRunTableExists() => await TableExists(SchemaName, "ScriptsRun");
+        protected async Task<bool> ScriptsRunErrorsTableExists() => await TableExists(SchemaName, "ScriptsRunErrors");
+        protected async Task<bool> VersionTableExists() => await TableExists(SchemaName, "Version");
 
         private async Task<bool> TableExists(string schemaName, string tableName)
         {
@@ -243,9 +241,7 @@ CREATE TABLE {VersionTable}(
 
             string existsSql = ExistsSql(tableSchema, fullTableName);
 
-            await using var cmd = Connection.CreateCommand();
-            cmd.CommandText = existsSql;
-            var res = await cmd.ExecuteScalarAsync();
+            var res = await ExecuteScalarAsync<object>(Connection, existsSql, null);
             return !DBNull.Value.Equals(res) && res is not null;
         }
         
@@ -258,33 +254,34 @@ table_schema = '{tableSchema}' AND
 table_name = '{fullTableName}'
 ";
         }
-
-        public async Task<string> GetCurrentVersion()
-        {
-            var sql = $@"
+        
+        protected virtual string CurrentVersionSql => $@"
 SELECT 
 {_syntax.LimitN($@"
 version
 FROM {VersionTable}
 ORDER BY id DESC", 1)}
-";
-            await using var cmd = Connection.CreateCommand();
-            cmd.CommandText = sql;
-            var res = (string?)await cmd.ExecuteScalarAsync();
+"; 
 
+        public async Task<string> GetCurrentVersion()
+        {
+            var sql = CurrentVersionSql;
+            var res = await ExecuteScalarAsync<string>(Connection, sql, null);
             return res ?? "0.0.0.0";
         }
 
-        public async Task<long> VersionTheDatabase(string newVersion)
+        public virtual async Task<long> VersionTheDatabase(string newVersion)
         {
-            var sql = $@"
+            var sql = (string)$@"
 INSERT INTO {VersionTable}
 (version, entry_date, modified_date, entered_by)
 VALUES(@newVersion, @entryDate, @modifiedDate, @enteredBy)
 
 {_syntax.ReturnId}
 ";
-            var res = (long)await Connection.ExecuteAsync(
+            
+            var res = (long) await ExecuteAsync(
+                Connection,
                 sql,
                 new
                 {
@@ -347,6 +344,8 @@ WHERE id = (SELECT MAX(id) FROM {ScriptsRunTable} sr2 WHERE sr2.script_name = sr
 
         private async Task<IDictionary<string, string>> GetScriptsRunCache() => _scriptsRunCache ??= await GetAllScriptsRun();
 
+        protected virtual string Parameterize(string sql) => sql;
+
         public async Task<string?> GetCurrentHash(string scriptName)
         {
             var cache = await GetScriptsRunCache();
@@ -355,11 +354,11 @@ WHERE id = (SELECT MAX(id) FROM {ScriptsRunTable} sr2 WHERE sr2.script_name = sr
                 return cache[scriptName];
             }
 
-            var hashSql = $@"
+            var hashSql = Parameterize($@"
 SELECT text_hash FROM  {ScriptsRunTable}
-WHERE script_name = @scriptName";
+WHERE script_name = @scriptName");
 
-            var hash = await Connection.ExecuteScalarAsync<string?>(hashSql, new { scriptName });
+            var hash = await ExecuteScalarAsync<string?>(Connection,  hashSql, new { scriptName });
             return hash;
         }
 
@@ -371,23 +370,25 @@ WHERE script_name = @scriptName";
                 return true;
             }
 
-            var hasRunSql = $@"
+            var hasRunSql = Parameterize($@"
 SELECT 1 FROM  {ScriptsRunTable}
-WHERE script_name = @scriptName";
+WHERE script_name = @scriptName");
 
-            var run = await Connection.ExecuteScalarAsync<bool?>(hasRunSql, new { scriptName });
+            var run = await ExecuteScalarAsync<bool?>(Connection, hasRunSql, new { scriptName });
             return run ?? false;
         }
 
-        public async Task InsertScriptRun(string scriptName, string? sql, string hash, bool runOnce, object versionId)
+        protected virtual object Bool(bool source) => source;
+
+        public async Task InsertScriptRun(string scriptName, string? sql, string hash, bool runOnce, long versionId)
         {
             var cache = await GetScriptsRunCache();
             cache.Remove(scriptName);
 
-            var insertSql = $@"
+            var insertSql = Parameterize($@"
 INSERT INTO {ScriptsRunTable}
 (version_id, script_name, text_of_script, text_hash, one_time_script, entry_date, modified_date, entered_by)
-VALUES (@versionId, @scriptName, @sql, @hash, @runOnce, @now, @now, @user)";
+VALUES (@versionId, @scriptName, @sql, @hash, @runOnce, @now, @now, @usr)");
 
             var scriptRun = new
             {
@@ -395,20 +396,20 @@ VALUES (@versionId, @scriptName, @sql, @hash, @runOnce, @now, @now, @user)";
                 scriptName,
                 sql,
                 hash,
-                runOnce,
+                runOnce = Bool(runOnce),
                 now = DateTime.UtcNow,
-                user = Environment.UserName
+                usr = Environment.UserName
             };
 
-            await Connection.ExecuteAsync(insertSql, scriptRun);
+            await ExecuteAsync(Connection, insertSql, scriptRun);
         }
 
         public async Task InsertScriptRunError(string scriptName, string? sql, string errorSql, string errorMessage, long versionId)
         {
-            var insertSql = $@"
+            var insertSql = Parameterize($@"
 INSERT INTO {ScriptsRunErrorsTable}
 (version, script_name, text_of_script, erroneous_part_of_script, error_message, entry_date, modified_date, entered_by)
-VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName, @sql, @errorSql, @errorMessage, @now, @now, @user)";
+VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName, @sql, @errorSql, @errorMessage, @now, @now, @usr)");
 
             var scriptRunErrors = new
             {
@@ -418,11 +419,11 @@ VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName,
                 errorSql,
                 errorMessage,
                 now = DateTime.UtcNow,
-                user = Environment.UserName
+                usr = Environment.UserName
             };
 
             using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-            await Connection.ExecuteAsync(insertSql, scriptRunErrors);
+            await ExecuteAsync(Connection, insertSql, scriptRunErrors);
 
             s.Complete();
         }
@@ -444,8 +445,22 @@ VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName,
             }
         }
 
-        protected static async Task ExecuteNonQuery(DbConnection conn, string sql)
+        protected async Task<T?> ExecuteScalarAsync<T>(DbConnection conn, string sql, object? parameters)
         {
+            Logger.LogWarning("SQL:" + sql);
+            return await conn.ExecuteScalarAsync<T?>(sql, parameters);
+        }
+
+        protected async Task<int> ExecuteAsync(DbConnection conn, string sql, object parameters)
+        {
+            Logger.LogWarning("SQL:" + sql);
+            return await conn.ExecuteAsync(sql, parameters);
+        }
+
+        protected async Task ExecuteNonQuery(DbConnection conn, string sql)
+        {
+            Logger.LogWarning("SQL:" + sql);
+        
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
             cmd.CommandType = CommandType.Text;

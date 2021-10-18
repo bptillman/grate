@@ -10,6 +10,7 @@
         string ListDatabases { get; }
         string VarcharType { get; }
         string TextType { get; }
+        string BigintType { get; }
         string BooleanType { get; }
         string CreateSchema(string schemaName);
         string CreateDatabase(string databaseName);

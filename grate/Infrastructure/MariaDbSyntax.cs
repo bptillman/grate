@@ -18,6 +18,7 @@
         public string ListDatabases => "SHOW DATABASES";
         public string VarcharType => "varchar";
         public string TextType => "text";
+        public string BigintType => "BIGINT";
         public string BooleanType => "boolean";
         public string PrimaryKeyColumn(string columnName) => $"{columnName} bigint NOT NULL AUTO_INCREMENT";
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA {schemaName}";
