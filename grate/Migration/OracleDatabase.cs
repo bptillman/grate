@@ -17,7 +17,7 @@ namespace grate.Migration
         {
         }
 
-        public override bool SupportsDdlTransactions => true;
+        public override bool SupportsDdlTransactions => false;
         public override bool SupportsSchemas => false;
 
         protected override DbConnection GetSqlConnection(string? connectionString) => new OracleConnection(connectionString);
