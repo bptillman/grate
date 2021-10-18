@@ -10,6 +10,7 @@ using Dapper;
 using grate.Configuration;
 using grate.Infrastructure;
 using Microsoft.Extensions.Logging;
+using static System.StringSplitOptions;
 
 namespace grate.Migration
 {
@@ -31,6 +32,10 @@ namespace grate.Migration
 
         public string ServerName => Connection.DataSource;
         public virtual string DatabaseName => Connection.Database;
+
+        protected string? Password => Connection.ConnectionString.Split(";", TrimEntries | RemoveEmptyEntries)
+            .SingleOrDefault(entry => entry.StartsWith("Password"))?
+            .Split("=", TrimEntries | RemoveEmptyEntries).Last();
 
         public abstract bool SupportsDdlTransactions { get; }
         public abstract bool SupportsSchemas { get; }
@@ -74,7 +79,11 @@ namespace grate.Migration
             if (!await DatabaseExists())
             {
                 using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-                await ExecuteNonQuery(AdminConnection, _syntax.CreateDatabase(DatabaseName));
+                var sql = _syntax.CreateDatabase(DatabaseName, Password);
+
+                Logger.LogWarning("SQL: " + sql);
+                
+                await ExecuteNonQuery(AdminConnection, sql);
                 s.Complete();
             }
 

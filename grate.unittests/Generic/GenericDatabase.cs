@@ -99,7 +99,7 @@ namespace grate.unittests.Generic
                         await using var conn = Context.CreateAdminDbConnection();
                         conn.Open();
                         await using var cmd = conn.CreateCommand();
-                        cmd.CommandText = Context.Syntax.CreateDatabase(db);
+                        cmd.CommandText = Context.Syntax.CreateDatabase(db, TestConfig.Password(Context.ConnectionString(db)));
                         await cmd.ExecuteNonQueryAsync();
                         break;
                     }

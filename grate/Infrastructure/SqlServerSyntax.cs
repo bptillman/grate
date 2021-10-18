@@ -22,7 +22,7 @@
         public string BooleanType => "bit";
         public string PrimaryKeyColumn(string columnName) => $"{columnName} bigint IDENTITY(1,1) NOT NULL";
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA ""{schemaName}"";";
-        public string CreateDatabase(string databaseName) => @$"CREATE DATABASE ""{databaseName}""";
+        public string CreateDatabase(string databaseName, string? _) => @$"CREATE DATABASE ""{databaseName}""";
         public string DropDatabase(string databaseName) => @$"USE master; 
                         IF EXISTS(SELECT * FROM sysdatabases WHERE [name] = '{databaseName}') 
                         BEGIN 

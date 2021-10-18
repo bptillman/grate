@@ -13,7 +13,7 @@
         string BigintType { get; }
         string BooleanType { get; }
         string CreateSchema(string schemaName);
-        string CreateDatabase(string databaseName);
+        string CreateDatabase(string databaseName, string? password);
         /// <summary>
         /// Syntax to drop a database if it exists, and do nothing if not.
         /// </summary>

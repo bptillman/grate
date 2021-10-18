@@ -22,7 +22,7 @@
         public string BooleanType => "boolean";
         public string PrimaryKeyColumn(string columnName) => $"{columnName} bigint NOT NULL AUTO_INCREMENT";
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA {schemaName}";
-        public string CreateDatabase(string databaseName) => @$"CREATE DATABASE {databaseName}";
+        public string CreateDatabase(string databaseName, string? _) => @$"CREATE DATABASE {databaseName}";
         public string DropDatabase(string databaseName) => @$"DROP DATABASE IF EXISTS `{databaseName}`;";
         public string TableWithSchema(string schemaName, string tableName) => $"{schemaName}_{tableName}";
         public string ReturnId => ";SELECT LAST_INSERT_ID();";

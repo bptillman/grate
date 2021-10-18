@@ -24,7 +24,7 @@
         public string CreateSchema(string schemaName) => @$"CREATE SCHEMA ""{schemaName}"";";
         
         // The "Create database" is a no-op with Sqlite, so we just provide a dummy SQL that just selects current DB
-        public string CreateDatabase(string databaseName) => CurrentDatabase; 
+        public string CreateDatabase(string databaseName, string? _) => CurrentDatabase; 
         
         // The "Drop database" is done via file deletion in Sqlite, so this isn't used.
         public string DropDatabase(string databaseName) => CurrentDatabase;
