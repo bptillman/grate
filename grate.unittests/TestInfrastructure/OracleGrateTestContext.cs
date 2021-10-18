@@ -17,8 +17,8 @@ namespace grate.unittests.TestInfrastructure
             $"run -d --name {serverName} -e ORACLE_ENABLE_XDB=true -P oracleinanutshell/oracle-xe-11g:latest";
 
         public string AdminConnectionString => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle";
-        public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/{database};User ID=system;Password=oracle";
-        //public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle;Proxy User Id={database}";
+        //public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle";
+        public string ConnectionString(string database) => $@"Data Source=localhost:{Port}/XE;User ID=system;Password=oracle;Proxy User Id={database}";
 
         public DbConnection GetDbConnection(string connectionString) => new OracleConnection(connectionString);
 

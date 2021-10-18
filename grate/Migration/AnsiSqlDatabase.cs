@@ -10,6 +10,7 @@ using Dapper;
 using grate.Configuration;
 using grate.Infrastructure;
 using Microsoft.Extensions.Logging;
+using Oracle.ManagedDataAccess.Client;
 using static System.StringSplitOptions;
 
 namespace grate.Migration
