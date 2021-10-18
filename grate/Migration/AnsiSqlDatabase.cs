@@ -409,7 +409,11 @@ VALUES (@versionId, @scriptName, @sql, @hash, @runOnce, @now, @now, @usr)");
             var insertSql = Parameterize($@"
 INSERT INTO {ScriptsRunErrorsTable}
 (version, script_name, text_of_script, erroneous_part_of_script, error_message, entry_date, modified_date, entered_by)
-VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName, @sql, @errorSql, @errorMessage, @now, @now, @usr)");
+VALUES (@version, @scriptName, @sql, @errorSql, @errorMessage, @now, @now, @usr)");
+//VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName, @sql, @errorSql, @errorMessage, @now, @now, @usr)");
+
+            var versionSql = Parameterize($"SELECT version FROM {VersionTable} WHERE id = @versionId");
+            var version = await ExecuteScalarAsync<string>(Connection, versionSql, new { versionId });
 
             var scriptRunErrors = new
             {
@@ -419,7 +423,8 @@ VALUES ((SELECT version FROM {VersionTable} WHERE id = @versionId), @scriptName,
                 errorSql,
                 errorMessage,
                 now = DateTime.UtcNow,
-                usr = Environment.UserName
+                usr = Environment.UserName,
+                version
             };
 
             using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
