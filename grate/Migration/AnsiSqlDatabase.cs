@@ -10,7 +10,6 @@ using Dapper;
 using grate.Configuration;
 using grate.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Oracle.ManagedDataAccess.Client;
 using static System.StringSplitOptions;
 
 namespace grate.Migration
@@ -79,6 +78,8 @@ namespace grate.Migration
         {
             if (!await DatabaseExists())
             {
+                Logger.LogTrace($"Creating database {DatabaseName}");
+                
                 using var s = new TransactionScope(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
                 var sql = _syntax.CreateDatabase(DatabaseName, Password);
 
@@ -114,6 +115,13 @@ namespace grate.Migration
             {
                 await OpenConnection();
                 var databases = await Connection.QueryAsync<string>(sql);
+                
+                Logger.LogTrace("Current databases: ");
+                foreach (var db in databases)
+                {
+                    Logger.LogTrace(" * " + db);
+                }
+                
                 return databases.Contains(DatabaseName);
             }
             catch (DbException e)

@@ -16,8 +16,8 @@ namespace grate.Infrastructure
             }
         }
 
-        public string CurrentDatabase => "select name from v$database";
-        public string ListDatabases => "SELECT datname FROM pg_database";
+        public string CurrentDatabase => "select user from dual";
+        public string ListDatabases => "SELECT * FROM all_users";
         public string VarcharType => "VARCHAR2";
         public string TextType => "CLOB";
         public string BigintType => "NUMBER(19)";

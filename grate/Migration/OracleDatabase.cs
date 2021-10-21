@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Dapper;
 using grate.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using static System.StringSplitOptions;
 
 namespace grate.Migration
 {
@@ -16,7 +19,7 @@ namespace grate.Migration
             : base(logger, new OracleSyntax())
         {
         }
-
+        
         public override bool SupportsDdlTransactions => false;
         public override bool SupportsSchemas => false;
 
@@ -98,6 +101,22 @@ RETURNING id into :id
             Logger.LogInformation(" Versioning {dbName} database with version {version}.", DatabaseName, newVersion);
 
             return res;
+        }
+
+        public override string DatabaseName
+        {
+            get
+            {
+                var tokens = Tokenize(_connection?.ConnectionString);
+                return tokens["Proxy User Id"] ?? tokens["User ID"] ?? base.DatabaseName;
+            }
+        }
+
+        private static IDictionary<string, string?> Tokenize(string? connectionString)
+        {
+            var tokens = connectionString?.Split(";", RemoveEmptyEntries | TrimEntries) ?? Enumerable.Empty<string>();
+            var keyPairs = tokens.Select(t => t.Split("=", TrimEntries));
+            return keyPairs.ToDictionary(pair => pair[0], pair => (string?) pair[1]);
         }
 
         private async Task CreateIdSequence(string table)
